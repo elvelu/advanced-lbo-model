@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced LBO Model</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto p-4">
+        <header class="mb-6 logo-container">
+            <img src="ashfordlogo.png" alt="Company Logo" class="logo">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Ashford <span class="logo-text">Ventures</span> Modeling Tool</h1>
+                <p class="text-gray-600">Leveraged buyout analysis </p>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex -mb-px">
+                    <button class="tab-button active" data-tab="transaction">Transaction</button>
+                    <button class="tab-button" data-tab="sources-uses">Sources & Uses</button>
+                    <button class="tab-button" data-tab="debt">Debt Assumptions</button>
+                    <button class="tab-button" data-tab="income">Income Statement</button>
+                    <button class="tab-button" data-tab="debt-schedule">Debt Schedule</button>
+                    <button class="tab-button" data-tab="credit">Credit Ratios</button>
+                    <button class="tab-button" data-tab="cash-flow">Cash Flow</button>
+                    <button class="tab-button" data-tab="returns">Returns</button>
+                    <button class="tab-button" data-tab="sensitivity">Sensitivity</button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div id="tab-content-container">
+            <!-- Transaction Inputs Tab (Initial View) -->
+            <div id="transaction-tab" class="tab-content active">
+                <h2 class="text-xl font-semibold mb-4">Transaction Inputs</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">LTM EBITDA ($M)</label>
+                            <input type="number" id="ltm-ebitda" value="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">EV / EBITDA Acquisition Multiple</label>
+                            <input type="number" id="ev-ebitda-multiple" value="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Transaction Fees (% of EV)</label>
+                            <input type="number" id="transaction-fees-pct" value="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Debt Issuance Fees (% of Debt)</label>
+                            <input type="number" id="debt-fees-pct" value="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Management Equity (%)</label>
+                            <input type="number" id="mgmt-equity-pct" value="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Projection Years</label>
+                        <input type="number" id="projection-years" value="5" min="5" max="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        <p class="text-xs text-gray-500 mt-1">Choose between 5-10 years for projections</p>
+                    </div>
+                    <div class="mt-4">
+                        <button id="calculate-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+                            Calculate Model
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sources & Uses Tab -->
+            <div id="sources-uses-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Sources & Uses</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Sources -->
+                        <div>
+                            <h3 class="text-lg font-medium mb-3">Sources</h3>
+                            
+                            <div id="debt-tranches-container">
+                                <!-- Debt Tranche Template - Will be populated dynamically -->
+                            </div>
+                            
+                            <button id="add-debt-tranche" class="text-blue-600 hover:text-blue-800 font-medium mt-2">
+                                + Add Debt Tranche
+                            </button>
+
+                            <div class="mt-4">
+                                <h4 class="font-medium">Equity Contribution</h4>
+                                <div class="ml-4 mt-2">
+                                    <div class="flex justify-between mb-1">
+                                        <span>Management Equity:</span>
+                                        <span id="management-equity" class="font-medium">$0M</span>
+                                    </div>
+                                    <div class="flex justify-between mb-1">
+                                        <span>Sponsor Equity:</span>
+                                        <span id="sponsor-equity" class="font-medium">$0M</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold">
+                                        <span>Total Equity:</span>
+                                        <span id="equity-amount">$0M</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm text-gray-600 mt-1">
+                                        <span>As % of Sources:</span>
+                                        <span id="equity-pct">0.0%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-2 border-t">
+                                <h4 class="font-medium">Total Sources</h4>
+                                <div id="total-sources" class="text-lg font-bold">$0M</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Uses -->
+                        <div>
+                            <h3 class="text-lg font-medium mb-3">Uses</h3>
+                            
+                            <div>
+                                <div class="mb-3">
+                                    <h4 class="font-medium">Purchase Enterprise Value</h4>
+                                    <div id="purchase-ev" class="text-lg font-bold">$0M</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h4 class="font-medium">Transaction Fees</h4>
+                                    <div id="transaction-fees" class="text-lg font-bold">$0M</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h4 class="font-medium">Debt Issuance Fees</h4>
+                                    <div id="debt-issuance-fees" class="text-lg font-bold">$0M</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-2 border-t">
+                                <h4 class="font-medium">Total Uses</h4>
+                                <div id="total-uses" class="text-lg font-bold">$0M</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Debt Assumptions Tab -->
+            <div id="debt-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Debt Assumptions</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div id="debt-assumptions-container">
+                        <!-- Header Row -->
+                        <div class="grid grid-cols-5 gap-4 font-medium bg-gray-100 p-3 rounded-t">
+                            <div>Tranche</div>
+                            <div>Amount ($M)</div>
+                            <div>Annual Amortization (%)</div>
+                            <div>Interest Rate (%)</div>
+                            <div>Cash Flow Sweep (%)</div>
+                        </div>
+                        
+                        <!-- Debt assumptions rows will be populated dynamically -->
+                        <div id="debt-assumptions-rows">
+                            <!-- Row template -->
+                            <!--
+                            <div class="grid grid-cols-5 gap-4 p-3 border-b">
+                                <div>Senior Debt</div>
+                                <div>$400M</div>
+                                <div><input type="number" class="amort-rate input-field" value="5"></div>
+                                <div><input type="number" class="interest-rate input-field" value="6"></div>
+                                <div><input type="number" class="cf-sweep input-field" value="50"></div>
+                            </div>
+                            -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Income Statement Tab -->
+            <div id="income-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Income Statement</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="sticky-header">
+                            <tr>
+                                <th class="text-left p-2"></th>
+                                <th class="text-right p-2">Historical</th>
+                                <th class="text-right p-2">Year 1</th>
+                                <th class="text-right p-2">Year 2</th>
+                                <th class="text-right p-2">Year 3</th>
+                                <th class="text-right p-2">Year 4</th>
+                                <th class="text-right p-2">Year 5</th>
+                                <th class="text-right p-2 year-column year-6" style="display: none;">Year 6</th>
+                                <th class="text-right p-2 year-column year-7" style="display: none;">Year 7</th>
+                                <th class="text-right p-2 year-column year-8" style="display: none;">Year 8</th>
+                                <th class="text-right p-2 year-column year-9" style="display: none;">Year 9</th>
+                                <th class="text-right p-2 year-column year-10" style="display: none;">Year 10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 1. Revenue Growth Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">Revenue Growth (%)</td>
+                                <td class="p-2 text-right">-</td>
+                                <td class="p-2 text-right"><input type="number" id="rev-growth-1" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right"><input type="number" id="rev-growth-2" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right"><input type="number" id="rev-growth-3" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right"><input type="number" id="rev-growth-4" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right"><input type="number" id="rev-growth-5" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="rev-growth-6" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="rev-growth-7" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="rev-growth-8" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="rev-growth-9" class="w-20 p-1 border rounded" value="5"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="rev-growth-10" class="w-20 p-1 border rounded" value="5"></td>
+                            </tr>
+
+                            <!-- Revenue Row -->
+                            <tr>
+                                <td class="p-2 font-medium">Revenue ($M)</td>
+                                <td class="p-2 text-right"><input type="number" id="historical-revenue" class="w-20 p-1 border rounded" value="500"></td>
+                                <td class="p-2 text-right revenue-value" id="revenue-1">525.0</td>
+                                <td class="p-2 text-right revenue-value" id="revenue-2">551.3</td>
+                                <td class="p-2 text-right revenue-value" id="revenue-3">578.8</td>
+                                <td class="p-2 text-right revenue-value" id="revenue-4">607.7</td>
+                                <td class="p-2 text-right revenue-value" id="revenue-5">638.1</td>
+                                <td class="p-2 text-right revenue-value year-column year-6" id="revenue-6" style="display: none;">670.0</td>
+                                <td class="p-2 text-right revenue-value year-column year-7" id="revenue-7" style="display: none;">703.5</td>
+                                <td class="p-2 text-right revenue-value year-column year-8" id="revenue-8" style="display: none;">738.7</td>
+                                <td class="p-2 text-right revenue-value year-column year-9" id="revenue-9" style="display: none;">775.6</td>
+                                <td class="p-2 text-right revenue-value year-column year-10" id="revenue-10" style="display: none;">814.4</td>
+                            </tr>
+
+                            <!-- COGS Percentage Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">COGS (% of Revenue)</td>
+                                <td class="p-2 text-right"><input type="number" id="historical-cogs-pct" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right"><input type="number" id="cogs-pct-1" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right"><input type="number" id="cogs-pct-2" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right"><input type="number" id="cogs-pct-3" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right"><input type="number" id="cogs-pct-4" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right"><input type="number" id="cogs-pct-5" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="cogs-pct-6" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="cogs-pct-7" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="cogs-pct-8" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="cogs-pct-9" class="w-20 p-1 border rounded" value="60"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="cogs-pct-10" class="w-20 p-1 border rounded" value="60"></td>
+                            </tr>
+
+                            <!-- 4. COGS Value Row -->
+                            <tr>
+                                <td class="p-2 font-medium">COGS ($M)</td>
+                                <td class="p-2 text-right cogs-value" id="cogs-historical">300.0</td>
+                                <td class="p-2 text-right cogs-value" id="cogs-1">315.0</td>
+                                <td class="p-2 text-right cogs-value" id="cogs-2">330.8</td>
+                                <td class="p-2 text-right cogs-value" id="cogs-3">347.3</td>
+                                <td class="p-2 text-right cogs-value" id="cogs-4">364.6</td>
+                                <td class="p-2 text-right cogs-value" id="cogs-5">382.9</td>
+                                <td class="p-2 text-right cogs-value year-column year-6" id="cogs-6" style="display: none;">402.0</td>
+                                <td class="p-2 text-right cogs-value year-column year-7" id="cogs-7" style="display: none;">422.1</td>
+                                <td class="p-2 text-right cogs-value year-column year-8" id="cogs-8" style="display: none;">443.2</td>
+                                <td class="p-2 text-right cogs-value year-column year-9" id="cogs-9" style="display: none;">465.4</td>
+                                <td class="p-2 text-right cogs-value year-column year-10" id="cogs-10" style="display: none;">488.6</td>
+                            </tr>
+
+                            <!-- 5. SG&A Percentage Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">SG&A (% of Revenue)</td>
+                                <td class="p-2 text-right"><input type="number" id="historical-sga-pct" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right"><input type="number" id="sga-pct-1" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right"><input type="number" id="sga-pct-2" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right"><input type="number" id="sga-pct-3" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right"><input type="number" id="sga-pct-4" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right"><input type="number" id="sga-pct-5" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="sga-pct-6" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="sga-pct-7" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="sga-pct-8" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="sga-pct-9" class="w-20 p-1 border rounded" value="20"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="sga-pct-10" class="w-20 p-1 border rounded" value="20"></td>
+                            </tr>
+
+                            <!-- 6. SG&A Value Row -->
+                            <tr>
+                                <td class="p-2 font-medium">SG&A ($M)</td>
+                                <td class="p-2 text-right sga-value" id="sga-historical">100.0</td>
+                                <td class="p-2 text-right sga-value" id="sga-1">105.0</td>
+                                <td class="p-2 text-right sga-value" id="sga-2">110.3</td>
+                                <td class="p-2 text-right sga-value" id="sga-3">115.8</td>
+                                <td class="p-2 text-right sga-value" id="sga-4">121.5</td>
+                                <td class="p-2 text-right sga-value" id="sga-5">127.6</td>
+                                <td class="p-2 text-right sga-value year-column year-6" id="sga-6" style="display: none;">134.0</td>
+                                <td class="p-2 text-right sga-value year-column year-7" id="sga-7" style="display: none;">140.7</td>
+                                <td class="p-2 text-right sga-value year-column year-8" id="sga-8" style="display: none;">147.7</td>
+                                <td class="p-2 text-right sga-value year-column year-9" id="sga-9" style="display: none;">155.1</td>
+                                <td class="p-2 text-right sga-value year-column year-10" id="sga-10" style="display: none;">162.9</td>
+                            </tr>
+
+                            <!-- 7. EBITDA Row -->
+                            <tr class="bg-blue-50 font-medium">
+                                <td class="p-2">EBITDA ($M)</td>
+                                <td class="p-2 text-right ebitda-value" id="ebitda-historical">100.0</td>
+                                <td class="p-2 text-right ebitda-value" id="ebitda-1">105.0</td>
+                                <td class="p-2 text-right ebitda-value" id="ebitda-2">110.3</td>
+                                <td class="p-2 text-right ebitda-value" id="ebitda-3">115.8</td>
+                                <td class="p-2 text-right ebitda-value" id="ebitda-4">121.5</td>
+                                <td class="p-2 text-right ebitda-value" id="ebitda-5">127.6</td>
+                                <td class="p-2 text-right ebitda-value year-column year-6" id="ebitda-6" style="display: none;">134.0</td>
+                                <td class="p-2 text-right ebitda-value year-column year-7" id="ebitda-7" style="display: none;">140.7</td>
+                                <td class="p-2 text-right ebitda-value year-column year-8" id="ebitda-8" style="display: none;">147.7</td>
+                                <td class="p-2 text-right ebitda-value year-column year-9" id="ebitda-9" style="display: none;">155.1</td>
+                                <td class="p-2 text-right ebitda-value year-column year-10" id="ebitda-10" style="display: none;">162.9</td>
+                            </tr>
+
+                            <!-- 8. D&A Percentage Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">D&A (% of Revenue)</td>
+                                <td class="p-2 text-right"><input type="number" id="historical-da-pct" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right"><input type="number" id="da-pct-1" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right"><input type="number" id="da-pct-2" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right"><input type="number" id="da-pct-3" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right"><input type="number" id="da-pct-4" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right"><input type="number" id="da-pct-5" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="da-pct-6" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="da-pct-7" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="da-pct-8" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="da-pct-9" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="da-pct-10" class="w-20 p-1 border rounded" value="3"></td>
+                            </tr>
+
+                            <!-- 9. D&A Value Row -->
+                            <tr>
+                                <td class="p-2 font-medium">D&A ($M)</td>
+                                <td class="p-2 text-right da-value" id="da-historical">15.0</td>
+                                <td class="p-2 text-right da-value" id="da-1">15.8</td>
+                                <td class="p-2 text-right da-value" id="da-2">16.5</td>
+                                <td class="p-2 text-right da-value" id="da-3">17.4</td>
+                                <td class="p-2 text-right da-value" id="da-4">18.2</td>
+                                <td class="p-2 text-right da-value" id="da-5">19.1</td>
+                                <td class="p-2 text-right da-value year-column year-6" id="da-6" style="display: none;">20.1</td>
+                                <td class="p-2 text-right da-value year-column year-7" id="da-7" style="display: none;">21.1</td>
+                                <td class="p-2 text-right da-value year-column year-8" id="da-8" style="display: none;">22.2</td>
+                                <td class="p-2 text-right da-value year-column year-9" id="da-9" style="display: none;">23.3</td>
+                                <td class="p-2 text-right da-value year-column year-10" id="da-10" style="display: none;">24.4</td>
+                            </tr>
+
+                            <!-- 10. EBIT Row -->
+                            <tr class="bg-blue-50 font-medium">
+                                <td class="p-2">EBIT ($M)</td>
+                                <td class="p-2 text-right ebit-value" id="ebit-historical">85.0</td>
+                                <td class="p-2 text-right ebit-value" id="ebit-1">89.3</td>
+                                <td class="p-2 text-right ebit-value" id="ebit-2">93.7</td>
+                                <td class="p-2 text-right ebit-value" id="ebit-3">98.4</td>
+                                <td class="p-2 text-right ebit-value" id="ebit-4">103.3</td>
+                                <td class="p-2 text-right ebit-value" id="ebit-5">108.5</td>
+                                <td class="p-2 text-right ebit-value year-column year-6" id="ebit-6" style="display: none;">113.9</td>
+                                <td class="p-2 text-right ebit-value year-column year-7" id="ebit-7" style="display: none;">119.6</td>
+                                <td class="p-2 text-right ebit-value year-column year-8" id="ebit-8" style="display: none;">125.6</td>
+                                <td class="p-2 text-right ebit-value year-column year-9" id="ebit-9" style="display: none;">131.8</td>
+                                <td class="p-2 text-right ebit-value year-column year-10" id="ebit-10" style="display: none;">138.4</td>
+                            </tr>
+
+                            <!-- 11. Interest Expense Row -->
+                            <tr>
+                                <td class="p-2 font-medium">Interest Expense ($M)</td>
+                                <td class="p-2 text-right interest-value" id="interest-historical">0.0</td>
+                                <td class="p-2 text-right interest-value" id="interest-1">36.0</td>
+                                <td class="p-2 text-right interest-value" id="interest-2">33.2</td>
+                                <td class="p-2 text-right interest-value" id="interest-3">30.1</td>
+                                <td class="p-2 text-right interest-value" id="interest-4">26.8</td>
+                                <td class="p-2 text-right interest-value" id="interest-5">23.1</td>
+                                <td class="p-2 text-right interest-value year-column year-6" id="interest-6" style="display: none;">19.2</td>
+                                <td class="p-2 text-right interest-value year-column year-7" id="interest-7" style="display: none;">15.0</td>
+                                <td class="p-2 text-right interest-value year-column year-8" id="interest-8" style="display: none;">10.5</td>
+                                <td class="p-2 text-right interest-value year-column year-9" id="interest-9" style="display: none;">5.6</td>
+                                <td class="p-2 text-right interest-value year-column year-10" id="interest-10" style="display: none;">0.4</td>
+                            </tr>
+
+                            <!-- 12. EBT Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">Income Before Taxes ($M)</td>
+                                <td class="p-2 text-right ebt-value" id="ebt-historical">85.0</td>
+                                <td class="p-2 text-right ebt-value" id="ebt-1">53.3</td>
+                                <td class="p-2 text-right ebt-value" id="ebt-2">60.5</td>
+                                <td class="p-2 text-right ebt-value" id="ebt-3">68.3</td>
+                                <td class="p-2 text-right ebt-value" id="ebt-4">76.5</td>
+                                <td class="p-2 text-right ebt-value" id="ebt-5">85.4</td>
+                                <td class="p-2 text-right ebt-value year-column year-6" id="ebt-6" style="display: none;">94.7</td>
+                                <td class="p-2 text-right ebt-value year-column year-7" id="ebt-7" style="display: none;">104.6</td>
+                                <td class="p-2 text-right ebt-value year-column year-8" id="ebt-8" style="display: none;">115.1</td>
+                                <td class="p-2 text-right ebt-value year-column year-9" id="ebt-9" style="display: none;">126.2</td>
+                                <td class="p-2 text-right ebt-value year-column year-10" id="ebt-10" style="display: none;">138.0</td>
+                            </tr>
+
+                            <!-- 13. Tax Rate Row -->
+                            <tr>
+                                <td class="p-2 font-medium">Tax Rate (%)</td>
+                                <td class="p-2 text-right"><input type="number" id="historical-tax-rate" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right"><input type="number" id="tax-rate-1" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right"><input type="number" id="tax-rate-2" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right"><input type="number" id="tax-rate-3" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right"><input type="number" id="tax-rate-4" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right"><input type="number" id="tax-rate-5" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="tax-rate-6" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="tax-rate-7" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="tax-rate-8" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="tax-rate-9" class="w-20 p-1 border rounded" value="25"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="tax-rate-10" class="w-20 p-1 border rounded" value="25"></td>
+                            </tr>
+
+                            <!-- 14. Taxes Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">Taxes ($M)</td>
+                                <td class="p-2 text-right taxes-value" id="taxes-historical">21.3</td>
+                                <td class="p-2 text-right taxes-value" id="taxes-1">13.3</td>
+                                <td class="p-2 text-right taxes-value" id="taxes-2">15.1</td>
+                                <td class="p-2 text-right taxes-value" id="taxes-3">17.1</td>
+                                <td class="p-2 text-right taxes-value" id="taxes-4">19.1</td>
+                                <td class="p-2 text-right taxes-value" id="taxes-5">21.3</td>
+                                <td class="p-2 text-right taxes-value year-column year-6" id="taxes-6" style="display: none;">23.7</td>
+                                <td class="p-2 text-right taxes-value year-column year-7" id="taxes-7" style="display: none;">26.2</td>
+                                <td class="p-2 text-right taxes-value year-column year-8" id="taxes-8" style="display: none;">28.8</td>
+                                <td class="p-2 text-right taxes-value year-column year-9" id="taxes-9" style="display: none;">31.6</td>
+                                <td class="p-2 text-right taxes-value year-column year-10" id="taxes-10" style="display: none;">34.5</td>
+                            </tr>
+
+                            <!-- Net Income Row -->
+                            <tr class="bg-blue-50 font-medium">
+                                <td class="p-2">Net Income ($M)</td>
+                                <td class="p-2 text-right netincome-value" id="netincome-historical">63.8</td>
+                                <td class="p-2 text-right netincome-value" id="netincome-1">39.9</td>
+                                <td class="p-2 text-right netincome-value" id="netincome-2">45.4</td>
+                                <td class="p-2 text-right netincome-value" id="netincome-3">51.2</td>
+                                <td class="p-2 text-right netincome-value" id="netincome-4">57.4</td>
+                                <td class="p-2 text-right netincome-value" id="netincome-5">64.0</td>
+                                <td class="p-2 text-right netincome-value year-column year-6" id="netincome-6" style="display: none;">71.0</td>
+                                <td class="p-2 text-right netincome-value year-column year-7" id="netincome-7" style="display: none;">78.5</td>
+                                <td class="p-2 text-right netincome-value year-column year-8" id="netincome-8" style="display: none;">86.3</td>
+                                <td class="p-2 text-right netincome-value year-column year-9" id="netincome-9" style="display: none;">94.7</td>
+                                <td class="p-2 text-right netincome-value year-column year-10" id="netincome-10" style="display: none;">103.5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Debt Schedule Tab -->
+            <div id="debt-schedule-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Debt Schedule</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                    <div id="debt-schedule-container">
+                        <!-- Debt schedule will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Ratios Tab -->
+            <div id="credit-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Credit Ratios</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                    <div id="credit-ratios-container">
+                        <!-- Credit ratios will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cash Flow Tab -->
+            <div id="cash-flow-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Cash Flow Statement</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="sticky-header">
+                            <tr>
+                                <th class="text-left p-2"></th>
+                                <th class="text-right p-2">Year 1</th>
+                                <th class="text-right p-2">Year 2</th>
+                                <th class="text-right p-2">Year 3</th>
+                                <th class="text-right p-2">Year 4</th>
+                                <th class="text-right p-2">Year 5</th>
+                                <th class="text-right p-2 year-column year-6" style="display: none;">Year 6</th>
+                                <th class="text-right p-2 year-column year-7" style="display: none;">Year 7</th>
+                                <th class="text-right p-2 year-column year-8" style="display: none;">Year 8</th>
+                                <th class="text-right p-2 year-column year-9" style="display: none;">Year 9</th>
+                                <th class="text-right p-2 year-column year-10" style="display: none;">Year 10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Net Income -->
+                            <tr>
+                                <td class="p-2 font-medium">Net Income ($M)</td>
+                                <td class="p-2 text-right" id="cf-netincome-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-netincome-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-netincome-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-netincome-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-netincome-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-netincome-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-netincome-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-netincome-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-netincome-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-netincome-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Add Back: D&A -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">+ Depreciation & Amortization</td>
+                                <td class="p-2 text-right" id="cf-da-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-da-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-da-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-da-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-da-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-da-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-da-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-da-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-da-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-da-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Change in Working Capital -->
+                            <tr>
+                                <td class="p-2 font-medium">- Change in Working Capital</td>
+                                <td class="p-2 text-right"><input type="number" id="cf-nwc-pct-1" class="w-20 p-1 border rounded" value="0" placeholder="% of ∆Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-nwc-pct-2" class="w-20 p-1 border rounded" value="0" placeholder="% of ∆Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-nwc-pct-3" class="w-20 p-1 border rounded" value="0" placeholder="% of ∆Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-nwc-pct-4" class="w-20 p-1 border rounded" value="0" placeholder="% of ∆Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-nwc-pct-5" class="w-20 p-1 border rounded" value="0" placeholder="% of ∆Rev"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="cf-nwc-pct-6" class="w-20 p-1 border rounded" value="0"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="cf-nwc-pct-7" class="w-20 p-1 border rounded" value="0"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="cf-nwc-pct-8" class="w-20 p-1 border rounded" value="0"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="cf-nwc-pct-9" class="w-20 p-1 border rounded" value="0"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="cf-nwc-pct-10" class="w-20 p-1 border rounded" value="0"></td>
+                            </tr>
+                            
+                            <!-- NWC Value Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium pl-8">Working Capital Changes ($M)</td>
+                                <td class="p-2 text-right" id="cf-nwc-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-nwc-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-nwc-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-nwc-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-nwc-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-nwc-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-nwc-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-nwc-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-nwc-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-nwc-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Capital Expenditures -->
+                            <tr>
+                                <td class="p-2 font-medium">- Capital Expenditures</td>
+                                <td class="p-2 text-right"><input type="number" id="cf-capex-pct-1" class="w-20 p-1 border rounded" value="3" placeholder="% of Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-capex-pct-2" class="w-20 p-1 border rounded" value="3" placeholder="% of Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-capex-pct-3" class="w-20 p-1 border rounded" value="3" placeholder="% of Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-capex-pct-4" class="w-20 p-1 border rounded" value="3" placeholder="% of Rev"></td>
+                                <td class="p-2 text-right"><input type="number" id="cf-capex-pct-5" class="w-20 p-1 border rounded" value="3" placeholder="% of Rev"></td>
+                                <td class="p-2 text-right year-column year-6" style="display: none;"><input type="number" id="cf-capex-pct-6" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-7" style="display: none;"><input type="number" id="cf-capex-pct-7" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-8" style="display: none;"><input type="number" id="cf-capex-pct-8" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-9" style="display: none;"><input type="number" id="cf-capex-pct-9" class="w-20 p-1 border rounded" value="3"></td>
+                                <td class="p-2 text-right year-column year-10" style="display: none;"><input type="number" id="cf-capex-pct-10" class="w-20 p-1 border rounded" value="3"></td>
+                            </tr>
+                            
+                            <!-- CapEx Value Row -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium pl-8">Capital Expenditures ($M)</td>
+                                <td class="p-2 text-right" id="cf-capex-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-capex-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-capex-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-capex-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-capex-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-capex-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-capex-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-capex-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-capex-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-capex-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Free Cash Flow (before debt service) -->
+                            <tr class="bg-blue-50 font-medium">
+                                <td class="p-2">Free Cash Flow (before debt service)</td>
+                                <td class="p-2 text-right" id="cf-fcf-before-debt-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-before-debt-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-before-debt-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-before-debt-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-before-debt-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-fcf-before-debt-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-fcf-before-debt-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-fcf-before-debt-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-fcf-before-debt-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-fcf-before-debt-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Interest Expense -->
+                            <tr>
+                                <td class="p-2 font-medium">- Interest Expense</td>
+                                <td class="p-2 text-right" id="cf-interest-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-interest-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-interest-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-interest-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-interest-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-interest-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-interest-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-interest-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-interest-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-interest-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Principal Repayment -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">- Scheduled Principal Repayment</td>
+                                <td class="p-2 text-right" id="cf-scheduled-principal-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-scheduled-principal-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-scheduled-principal-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-scheduled-principal-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-scheduled-principal-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-scheduled-principal-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-scheduled-principal-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-scheduled-principal-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-scheduled-principal-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-scheduled-principal-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Cash Flow Available for Optional Debt Repayment -->
+                            <tr>
+                                <td class="p-2 font-medium">= Cash Flow Available for Optional Debt Repayment</td>
+                                <td class="p-2 text-right" id="cf-available-for-sweep-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-available-for-sweep-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-available-for-sweep-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-available-for-sweep-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-available-for-sweep-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-available-for-sweep-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-available-for-sweep-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-available-for-sweep-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-available-for-sweep-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-available-for-sweep-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Optional Principal Repayment -->
+                            <tr class="bg-gray-50">
+                                <td class="p-2 font-medium">- Optional Principal Repayment</td>
+                                <td class="p-2 text-right" id="cf-additional-principal-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-additional-principal-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-additional-principal-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-additional-principal-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-additional-principal-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-additional-principal-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-additional-principal-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-additional-principal-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-additional-principal-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-additional-principal-10" style="display: none;">0.0</td>
+                            </tr>
+                            
+                            <!-- Free Cash Flow (after debt service) -->
+                            <tr class="bg-blue-50 font-medium">
+                                <td class="p-2">Free Cash Flow to Equity</td>
+                                <td class="p-2 text-right" id="cf-fcf-to-equity-1">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-to-equity-2">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-to-equity-3">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-to-equity-4">0.0</td>
+                                <td class="p-2 text-right" id="cf-fcf-to-equity-5">0.0</td>
+                                <td class="p-2 text-right year-column year-6" id="cf-fcf-to-equity-6" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-7" id="cf-fcf-to-equity-7" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-8" id="cf-fcf-to-equity-8" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-9" id="cf-fcf-to-equity-9" style="display: none;">0.0</td>
+                                <td class="p-2 text-right year-column year-10" id="cf-fcf-to-equity-10" style="display: none;">0.0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Returns Tab -->
+            <div id="returns-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Returns Analysis</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Exit Year</label>
+                            <input type="number" id="exit-year" value="5" min="1" max="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            <p class="text-xs text-gray-500 mt-1">Choose exit year (limited by projection years)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Exit EV / EBITDA Multiple</label>
+                            <input type="number" id="exit-multiple" value="8" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <h3 class="font-medium text-lg mb-4">Investment Returns</h3>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="border rounded-lg p-4">
+                                <h4 class="text-gray-500 mb-1">Initial Equity Investment</h4>
+                                <div id="initial-equity" class="text-2xl font-bold">$0.0M</div>
+                            </div>
+                            
+                            <div class="border rounded-lg p-4">
+                                <h4 class="text-gray-500 mb-1">Exit Equity Value</h4>
+                                <div id="exit-equity" class="text-2xl font-bold">$0.0M</div>
+                            </div>
+                            
+                            <div class="border rounded-lg p-4 bg-blue-50">
+                                <h4 class="text-gray-500 mb-1">Multiple of Invested Capital (MOIC)</h4>
+                                <div id="moic-value" class="text-2xl font-bold">0.0x</div>
+                            </div>
+                            
+                            <div class="border rounded-lg p-4 bg-blue-50">
+                                <h4 class="text-gray-500 mb-1">Internal Rate of Return (IRR)</h4>
+                                <div id="irr-value" class="text-2xl font-bold">0.0%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h3 class="font-medium text-lg mb-4">Cumulative Cash Flows</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="text-left p-2">Year</th>
+                                            <th class="text-right p-2">Cash Flow ($M)</th>
+                                            <th class="text-right p-2">Cumulative ($M)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cumulative-cf-body">
+                                        <!-- Will be filled dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h3 class="font-medium text-lg mb-4">Return Attribution</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="text-gray-500 mb-1">Cash Flow Contribution</h4>
+                                    <div id="cf-attribution" class="text-xl font-bold">0.0%</div>
+                                </div>
+                                <div class="border rounded-lg p-4">
+                                    <h4 class="text-gray-500 mb-1">Exit Value Contribution</h4>
+                                    <div id="exit-attribution" class="text-xl font-bold">0.0%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h3 class="font-medium text-lg mb-4">Investor Returns</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="font-medium mb-2" id="mgmt-title">Management Returns</h4>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="border rounded-lg p-3">
+                                            <h5 class="text-gray-500 text-sm">Initial Equity</h5>
+                                            <div id="mgmt-initial-equity" class="font-bold">$0.0M</div>
+                                        </div>
+                                        <div class="border rounded-lg p-3">
+                                            <h5 class="text-gray-500 text-sm">Exit Equity</h5>
+                                            <div id="mgmt-exit-equity" class="font-bold">$0.0M</div>
+                                        </div>
+                                        <div class="border rounded-lg p-3 bg-blue-50">
+                                            <h5 class="text-gray-500 text-sm">MOIC</h5>
+                                            <div id="mgmt-moic" class="font-bold">0.0x</div>
+                                        </div>
+                                        <div class="border rounded-lg p-3 bg-blue-50">
+                                            <h5 class="text-gray-500 text-sm">IRR</h5>
+                                            <div id="mgmt-irr" class="font-bold">0.0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium mb-2" id="sponsor-title">Sponsor Returns</h4>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="border rounded-lg p-3">
+                                            <h5 class="text-gray-500 text-sm">Initial Equity</h5>
+                                            <div id="sponsor-initial-equity" class="font-bold">$0.0M</div>
+                                        </div>
+                                        <div class="border rounded-lg p-3">
+                                            <h5 class="text-gray-500 text-sm">Exit Equity</h5>
+                                            <div id="sponsor-exit-equity" class="font-bold">$0.0M</div>
+                                        </div>
+                                        <div class="border rounded-lg p-3 bg-blue-50">
+                                            <h5 class="text-gray-500 text-sm">MOIC</h5>
+                                            <div id="sponsor-moic" class="font-bold">0.0x</div>
+                                        </div>
+                                        <div class="border rounded-lg p-3 bg-blue-50">
+                                            <h5 class="text-gray-500 text-sm">IRR</h5>
+                                            <div id="sponsor-irr" class="font-bold">0.0%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h4 class="font-medium mb-2">Returns Summary</h4>
+                            <div id="returns-summary" class="p-4 bg-gray-50 rounded">
+                                <p>With an exit multiple of <span id="summary-exit-multiple">8.0x</span> in Year <span id="summary-exit-year">5</span>, 
+                                the $<span id="summary-initial-equity">0.0</span>M equity investment yields 
+                                a $<span id="summary-exit-equity">0.0</span>M exit value, resulting in a 
+                                <span id="summary-moic">0.0x</span> MOIC and 
+                                <span id="summary-irr">0.0%</span> IRR.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sensitivity Tab -->
+            <div id="sensitivity-tab" class="tab-content">
+                <h2 class="text-xl font-semibold mb-4">Sensitivity Analysis</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <!-- First Sensitivity Table: Entry vs Exit Multiple -->
+                    <div class="mb-8">
+                        <h3 class="font-medium text-lg mb-4">MOIC Sensitivity: Entry Multiple vs Exit Multiple</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr class="bg-blue-50">
+                                        <th class="border border-gray-300 p-2">MOIC</th>
+                                        <th class="border border-gray-300 p-2" id="exit-6">Exit: 6.0x</th>
+                                        <th class="border border-gray-300 p-2" id="exit-7">Exit: 7.0x</th>
+                                        <th class="border border-gray-300 p-2" id="exit-8">Exit: 8.0x</th>
+                                        <th class="border border-gray-300 p-2" id="exit-9">Exit: 9.0x</th>
+                                        <th class="border border-gray-300 p-2" id="exit-10">Exit: 10.0x</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="moic-sensitivity-body">
+                                    <!-- Will be filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Second Sensitivity Table: Entry vs Exit Multiple for IRR -->
+                    <div class="mb-8">
+                        <h3 class="font-medium text-lg mb-4">IRR Sensitivity: Entry Multiple vs Exit Multiple</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr class="bg-blue-50">
+                                        <th class="border border-gray-300 p-2">IRR</th>
+                                        <th class="border border-gray-300 p-2">Exit: 6.0x</th>
+                                        <th class="border border-gray-300 p-2">Exit: 7.0x</th>
+                                        <th class="border border-gray-300 p-2">Exit: 8.0x</th>
+                                        <th class="border border-gray-300 p-2">Exit: 9.0x</th>
+                                        <th class="border border-gray-300 p-2">Exit: 10.0x</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="irr-sensitivity-body">
+                                    <!-- Will be filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Third Sensitivity Table: Revenue Growth Impact -->
+                    <div>
+                        <h3 class="font-medium text-lg mb-4">Revenue Growth Rate Sensitivity</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr class="bg-blue-50">
+                                        <th class="border border-gray-300 p-2">Revenue Growth</th>
+                                        <th class="border border-gray-300 p-2">3.0%</th>
+                                        <th class="border border-gray-300 p-2">4.0%</th>
+                                        <th class="border border-gray-300 p-2">5.0%</th>
+                                        <th class="border border-gray-300 p-2">6.0%</th>
+                                        <th class="border border-gray-300 p-2">7.0%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="border border-gray-300 p-2 text-left bg-gray-50">MOIC</th>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-moic-0">0.0x</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-moic-1">0.0x</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-moic-2">0.0x</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-moic-3">0.0x</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-moic-4">0.0x</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="border border-gray-300 p-2 text-left bg-gray-50">IRR</th>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-irr-0">0.0%</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-irr-1">0.0%</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-irr-2">0.0%</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-irr-3">0.0%</td>
+                                        <td class="border border-gray-300 p-2 text-center" id="growth-irr-4">0.0%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lbo-model.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
