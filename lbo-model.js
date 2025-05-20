@@ -574,8 +574,10 @@ const LBOModel = {
             this.calculateCashFlows();
         }
         
-        // Now allocate the additional amortization based on the cash flow sweep
-        for (let yearIndex = 0; yearIndex < this.cashFlow.yearlyFlows.length; yearIndex++) {
+        const projectionYears = this.incomeStatement.projections.length;
+
+        // Allocate the additional amortization based on the cash flow sweep
+        for (let yearIndex = 0; yearIndex < projectionYears; yearIndex++) {
             const yearCashFlow = this.cashFlow.yearlyFlows[yearIndex];
             let remainingSweepCash = yearCashFlow.availableForSweep;
             
@@ -604,10 +606,20 @@ const LBOModel = {
                 
                 // Update tranche schedule
                 trancheSchedule[yearIndex + 1].additionalAmortization = additionalPayment;
-                trancheSchedule[yearIndex + 1].totalAmortization = 
+                trancheSchedule[yearIndex + 1].totalAmortization =
                     trancheSchedule[yearIndex + 1].scheduledAmortization + additionalPayment;
-                trancheSchedule[yearIndex + 1].endingBalance = 
+                trancheSchedule[yearIndex + 1].endingBalance =
                     trancheSchedule[yearIndex + 1].beginningBalance - trancheSchedule[yearIndex + 1].totalAmortization;
+
+                // Propagate new balance to next year
+                if (yearIndex + 2 <= projectionYears) {
+                    const next = trancheSchedule[yearIndex + 2];
+                    if (next) {
+                        next.beginningBalance = trancheSchedule[yearIndex + 1].endingBalance;
+                        next.scheduledAmortization = next.beginningBalance * (tranche.amortizationPct / 100);
+                        next.interestExpense = next.beginningBalance * (tranche.interestRate / 100);
+                    }
+                }
                 
                 // Update total for this year
                 this.debtSchedule.totalsByYear[yearIndex + 1].additionalAmortization += additionalPayment;
@@ -629,7 +641,44 @@ const LBOModel = {
             yearCashFlow.additionalAmortization = this.debtSchedule.totalsByYear[yearIndex + 1].additionalAmortization;
             yearCashFlow.fcfToEquity = yearCashFlow.availableForSweep - yearCashFlow.additionalAmortization;
         }
-        
+
+        // Recalculate totals and interest after sweep adjustments
+        this.debtSchedule.totalsByYear = [];
+        for (let year = 0; year <= projectionYears; year++) {
+            const totals = {
+                year: year,
+                beginningBalance: 0,
+                scheduledAmortization: 0,
+                additionalAmortization: 0,
+                totalAmortization: 0,
+                endingBalance: 0,
+                interestExpense: 0
+            };
+
+            this.debtSchedule.tranches.forEach(tr => {
+                const sched = tr.schedule[year];
+                totals.beginningBalance += sched.beginningBalance;
+                totals.scheduledAmortization += sched.scheduledAmortization;
+                totals.additionalAmortization += sched.additionalAmortization;
+                totals.totalAmortization += sched.totalAmortization;
+                totals.endingBalance += sched.endingBalance;
+                totals.interestExpense += sched.interestExpense;
+            });
+
+            this.debtSchedule.totalsByYear.push(totals);
+
+            if (year > 0) {
+                this.incomeStatement.projections[year - 1].interestExpense = totals.interestExpense;
+            }
+        }
+
+        // Update cash flow equity amounts with final totals
+        for (let i = 0; i < projectionYears; i++) {
+            const flow = this.cashFlow.yearlyFlows[i];
+            flow.additionalAmortization = this.debtSchedule.totalsByYear[i + 1].additionalAmortization;
+            flow.fcfToEquity = flow.availableForSweep - flow.additionalAmortization;
+        }
+
         return this.cashFlow.yearlyFlows;
     },
 
